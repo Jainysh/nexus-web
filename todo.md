@@ -1,4 +1,5 @@
-make login phonenumber to only except 10 chars
+- make login phonenumber to only except 10 chars
+- explore layout architecture to route only inner components and keep navbars intact
 
 # Infra
 

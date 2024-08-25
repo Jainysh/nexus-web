@@ -10,7 +10,7 @@ import { login } from "@/store/authSlice";
 import { AppConfig } from "@/utils/const";
 
 type FormData = {
-  phoneNumber: string;
+  primaryPhoneNumber: string;
   otp: string;
 };
 
@@ -21,7 +21,7 @@ const LoginPage = () => {
   const { control, handleSubmit, watch } = useForm<FormData>({
     defaultValues: {
       otp: "",
-      phoneNumber: "",
+      primaryPhoneNumber: "",
     },
   });
   const [otpSent, setOtpSent] = useState(false);
@@ -29,7 +29,7 @@ const LoginPage = () => {
 
   const [isProcessingReq, setIsProcessingReq] = useState(false);
 
-  const phoneNumber = watch("phoneNumber");
+  const phoneNumber = watch("primaryPhoneNumber");
   const otp = watch("otp");
 
   const onSubmit = (data: FormData) => {
@@ -37,7 +37,7 @@ const LoginPage = () => {
     console.log(data);
     setTimeout(() => {
       setIsProcessingReq(false);
-      dispatch(login({ phoneNumber: data.phoneNumber }));
+      dispatch(login({ primaryPhoneNumber: data.primaryPhoneNumber }));
       router.push("/onboarding");
     }, 500);
     // Handle login logic here
@@ -91,7 +91,7 @@ const LoginPage = () => {
           <Box display="flex" alignItems="flex-end" mb={2}>
             <CountryCodeDropdown />
             <Controller
-              name="phoneNumber"
+              name="primaryPhoneNumber"
               control={control}
               rules={{
                 required: "Phone number is required",

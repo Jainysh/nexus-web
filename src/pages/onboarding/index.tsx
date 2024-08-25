@@ -11,18 +11,24 @@ import {
   Paper,
 } from "@mui/material";
 import { useRouter } from "next/router";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import Logout from "@/components/Logout";
 import { AppConfig } from "@/utils/const";
 import Help from "@/components/Help";
+import { updateUserInfo } from "@/store/authSlice";
+import { Party } from "../../../types/common";
 
 interface OnboardingFormData {
   companyName: string;
   addressLine1: string;
   addressLine2: string;
   city: string;
-  phoneNumber: string;
+  district: string;
+  state: string;
+  country: string;
+  pincode: string;
+  primaryPhoneNumber: string;
 }
 
 const OnboardingPage = () => {
@@ -31,10 +37,13 @@ const OnboardingPage = () => {
     (state: RootState) => state.auth
   );
 
+  const dispatch = useDispatch();
+
   const router = useRouter();
   const { control, handleSubmit } = useForm<OnboardingFormData>({
     defaultValues: {
-      phoneNumber: loggedInUser?.phoneNumber || "",
+      primaryPhoneNumber: loggedInUser?.primaryPhoneNumber || "",
+      country: "India",
     },
   });
 
@@ -45,8 +54,22 @@ const OnboardingPage = () => {
   }, [isLoggedIn, router]);
 
   const onSubmit = (data: OnboardingFormData) => {
-    console.log(data);
-    // Handle form submission here
+    const user: Party = {
+      companyName: data.companyName,
+      address: {
+        addressLine1: data.addressLine1,
+        addressLine2: data.addressLine2,
+        city: data.city,
+        country: data.country,
+        district: data.district,
+        pincode: data.pincode,
+        state: data.state,
+      },
+      primaryPhoneNumber: data.primaryPhoneNumber,
+      type: "Distributor",
+    };
+    dispatch(updateUserInfo({ user }));
+    router.push("/dashboard");
   };
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -55,13 +78,14 @@ const OnboardingPage = () => {
 
   return (
     <Container maxWidth="sm">
-      <Box sx={{ mt: 4 }}>
+      <Box sx={{ mt: 3 }}>
         <Box
           display={"flex"}
-          alignItems={"baseline"}
+          alignItems={"center"}
           justifyContent={"space-between"}
+          marginBottom={1}
         >
-          <Typography variant="h5" component="h1" gutterBottom>
+          <Typography variant="h5" component="h1">
             Welcome to {AppConfig.appName} App
           </Typography>
           <Logout />
@@ -91,6 +115,21 @@ const OnboardingPage = () => {
               )}
             />
             <Controller
+              name="primaryPhoneNumber"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Phone Number"
+                  fullWidth
+                  margin="normal"
+                  InputProps={{
+                    readOnly: true,
+                  }}
+                />
+              )}
+            />
+            <Controller
               name="addressLine1"
               control={control}
               rules={{ required: "Address Line 1 is required" }}
@@ -111,7 +150,7 @@ const OnboardingPage = () => {
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Address Line 2"
+                  label="Address Line 2 (Optional)"
                   fullWidth
                   margin="normal"
                 />
@@ -133,17 +172,47 @@ const OnboardingPage = () => {
               )}
             />
             <Controller
-              name="phoneNumber"
+              name="district"
               control={control}
-              render={({ field }) => (
+              rules={{ required: "District is required" }}
+              render={({ field, fieldState: { error } }) => (
                 <TextField
                   {...field}
-                  label="Phone Number"
+                  label="District"
                   fullWidth
                   margin="normal"
-                  InputProps={{
-                    readOnly: true,
-                  }}
+                  error={!!error}
+                  helperText={error?.message}
+                />
+              )}
+            />
+            <Controller
+              name="state"
+              control={control}
+              rules={{ required: "State is required" }}
+              render={({ field, fieldState: { error } }) => (
+                <TextField
+                  {...field}
+                  label="State"
+                  fullWidth
+                  margin="normal"
+                  error={!!error}
+                  helperText={error?.message}
+                />
+              )}
+            />
+            <Controller
+              name="pincode"
+              control={control}
+              rules={{ required: "Pincode is required" }}
+              render={({ field, fieldState: { error } }) => (
+                <TextField
+                  {...field}
+                  label="Pincode"
+                  fullWidth
+                  margin="normal"
+                  error={!!error}
+                  helperText={error?.message}
                 />
               )}
             />

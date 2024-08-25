@@ -5,11 +5,30 @@ interface AuthState {
   isLoggedIn: boolean;
   loggedInUser: Partial<Party> | null;
 }
-
-const initialState: AuthState = {
-  isLoggedIn: false,
-  loggedInUser: null,
+const initialStateMock: AuthState = {
+  isLoggedIn: true,
+  loggedInUser: {
+    companyName: "Apple Computers",
+    address: {
+      addressLine1: "test",
+      city: "Cuppertino",
+      country: "Unites States",
+      district: "Test",
+      pincode: "123123",
+      state: "State",
+      addressLine2: "adasda",
+    },
+    primaryPhoneNumber: "9049778749",
+    type: "Distributor",
+  },
 };
+
+const initialState: AuthState =
+  // initialStateMock;
+  {
+    isLoggedIn: false,
+    loggedInUser: null,
+  };
 
 const authSlice = createSlice({
   name: "auth",

@@ -1,4 +1,5 @@
-import { Box, CircularProgress, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
+import BrandIcon from "./icons/BrandIcon";
 
 interface FullPageLoaderProps {
   message?: string;
@@ -25,7 +26,8 @@ const FullPageLoader = ({ message = "Loading..." }: FullPageLoaderProps) => {
           width: "100%",
         }}
       >
-        <CircularProgress />
+        {/* <CircularProgress /> */}
+        <BrandIcon />
         <Typography color={"white"} sx={{ paddingTop: "16px" }}>
           {message}
         </Typography>

@@ -13,11 +13,11 @@ import {
 import { useRouter } from "next/router";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
-import Logout from "@/components/Logout";
 import { AppConfig } from "@/utils/const";
 import Help from "@/components/Help";
 import { updateUserInfo } from "@/store/authSlice";
 import { Party } from "../../../types/common";
+import useLogout from "@/hooks/useLogout";
 
 interface OnboardingFormData {
   companyName: string;
@@ -38,6 +38,7 @@ const OnboardingPage = () => {
   );
 
   const dispatch = useDispatch();
+  const { LogoutComponent } = useLogout();
 
   const router = useRouter();
   const { control, handleSubmit } = useForm<OnboardingFormData>({
@@ -88,7 +89,7 @@ const OnboardingPage = () => {
           <Typography variant="h5" component="h1">
             Welcome to {AppConfig.appName} App
           </Typography>
-          <Logout />
+          {LogoutComponent}
         </Box>
 
         <Paper sx={{ mb: 2 }}>

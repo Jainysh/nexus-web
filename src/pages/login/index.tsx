@@ -4,8 +4,8 @@ import { Box, Button, TextField, Container, Typography } from "@mui/material";
 import OTPInput from "@/components/login/OTPInput";
 import CountryCodeDropdown from "@/components/login/CountryCodeDropdown";
 import { useRouter } from "next/router";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/store/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/store/store";
 import { login } from "@/store/authSlice";
 import { AppConfig } from "@/utils/const";
 
@@ -17,6 +17,18 @@ type FormData = {
 const LoginPage = () => {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
+
+  const { isLoggedIn, loggedInUser } = useSelector(
+    (state: RootState) => state.auth
+  );
+
+  useEffect(() => {
+    if (isLoggedIn && !loggedInUser?.companyName) {
+      router.push("/onboarding");
+    } else if (isLoggedIn && loggedInUser?.companyName) {
+      router.push("/dashboard");
+    }
+  }, [router, isLoggedIn, loggedInUser]);
 
   const { control, handleSubmit, watch } = useForm<FormData>({
     defaultValues: {

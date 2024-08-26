@@ -6,35 +6,35 @@ interface AuthState {
   loggedInUser: Partial<Party> | null;
 }
 const initialStateMock: AuthState = {
-  isLoggedIn: true,
+  isLoggedIn: false,
   loggedInUser: {
-    companyName: "Apple Computers",
+    companyName: "Jain Distributors",
     address: {
-      addressLine1: "test",
-      city: "Cuppertino",
-      country: "Unites States",
-      district: "Test",
-      pincode: "123123",
-      state: "State",
-      addressLine2: "adasda",
+      addressLine1: "Kaipeth Circle",
+      city: "Davangere",
+      country: "India",
+      district: "Davangere",
+      pincode: "123456",
+      state: "Karnataka",
+      addressLine2: "",
     },
-    primaryPhoneNumber: "9049778749",
+    primaryPhoneNumber: "8123646364",
     type: "Distributor",
   },
 };
 
-const initialState: AuthState =
-  // initialStateMock;
-  {
-    isLoggedIn: false,
-    loggedInUser: null,
-  };
+const initialState: AuthState = initialStateMock;
+// {
+//   isLoggedIn: false,
+//   loggedInUser: null,
+// };
 
 const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
     login: (state, action: PayloadAction<{ primaryPhoneNumber: string }>) => {
+      localStorage.setItem("loggedInNumber", action.payload.primaryPhoneNumber);
       state.isLoggedIn = true;
       state.loggedInUser = { ...state.loggedInUser, ...action.payload };
     },
@@ -45,6 +45,7 @@ const authSlice = createSlice({
       state.loggedInUser = { ...state.loggedInUser, ...action.payload.user };
     },
     logout: (state) => {
+      localStorage.removeItem("loggedInNumber");
       state.isLoggedIn = false;
       state.loggedInUser = null;
     },

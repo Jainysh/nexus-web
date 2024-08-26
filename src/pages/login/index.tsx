@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { Box, Button, TextField, Container, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  TextField,
+  Container,
+  Typography,
+  Alert,
+} from "@mui/material";
 import OTPInput from "@/components/login/OTPInput";
 import CountryCodeDropdown from "@/components/login/CountryCodeDropdown";
 import { useRouter } from "next/router";
@@ -17,6 +24,8 @@ type FormData = {
 const LoginPage = () => {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
+
+  const [error, setError] = useState("");
 
   const { isLoggedIn, loggedInUser } = useSelector(
     (state: RootState) => state.auth
@@ -44,13 +53,28 @@ const LoginPage = () => {
   const phoneNumber = watch("primaryPhoneNumber");
   const otp = watch("otp");
 
+  const whitelistNumbers = ["8123646364", "9049778749"];
+
   const onSubmit = (data: FormData) => {
     setIsProcessingReq(true);
     console.log(data);
+
     setTimeout(() => {
       setIsProcessingReq(false);
-      dispatch(login({ primaryPhoneNumber: data.primaryPhoneNumber }));
-      router.push("/onboarding");
+      if (whitelistNumbers.includes(data.primaryPhoneNumber)) {
+        if (data.otp === "123456") {
+          dispatch(login({ primaryPhoneNumber: data.primaryPhoneNumber }));
+          if (loggedInUser) {
+            router.push("/dashboard");
+          } else {
+            router.push("/onboarding");
+          }
+        } else {
+          setError("Incorrect OTP");
+        }
+      } else {
+        setError("You are not authorized.");
+      }
     }, 500);
     // Handle login logic here
   };
@@ -127,6 +151,7 @@ const LoginPage = () => {
               )}
             />
           </Box>
+
           {otpSent ? (
             <>
               <OTPInput control={control} />
@@ -149,6 +174,11 @@ const LoginPage = () => {
                   ? `Resend OTP in ${otpResendTime}s`
                   : "Resend OTP"}
               </Button>
+              {error && (
+                <Alert severity="error" sx={{ width: "100%", mt: 2 }}>
+                  {error}
+                </Alert>
+              )}
             </>
           ) : (
             <Button

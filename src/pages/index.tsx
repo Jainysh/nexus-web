@@ -1,17 +1,25 @@
-import Head from "next/head";
-import Image from "next/image";
-import { Inter } from "next/font/google";
-import styles from "@/styles/Home.module.css";
+// import Head from "next/head";
+// import Image from "next/image";
+// import { Inter } from "next/font/google";
+// import styles from "@/styles/Home.module.css";
+
+import FullPageLoader from "@/components/FullPageLoader";
+import { RootState } from "@/store/store";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
-import FullPageLoader from "@/components/FullPageLoader";
+import { useSelector } from "react-redux";
 
-const inter = Inter({ subsets: ["latin"] });
+// const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
   const router = useRouter();
+  const { isLoggedIn } = useSelector((state: RootState) => state.auth);
   useEffect(() => {
-    router.push("/login");
+    if (isLoggedIn) {
+      router.push("/dashboard");
+    } else {
+      router.push("/login");
+    }
   }, [router]);
   return (
     <>

@@ -13,7 +13,9 @@ const Layout = ({ children }: LayoutProps) => {
   return (
     <div>
       {!isMobile && <Sidebar />}
-      <main style={{ marginLeft: "56px" }}>{children}</main>
+      <main style={{ marginLeft: !isMobile ? "56px" : undefined }}>
+        {children}
+      </main>
       {isMobile && <BottomTab />}
     </div>
   );

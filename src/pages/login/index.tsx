@@ -15,6 +15,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store/store";
 import { login } from "@/store/authSlice";
 import { AppConfig } from "@/utils/const";
+import {
+  createOrUpdateSupabaseUser,
+  sendOTP,
+  verifyOTP,
+} from "@/services/firebase/authService";
+import { ConfirmationResult } from "firebase/auth";
 
 type FormData = {
   primaryPhoneNumber: string;
@@ -25,11 +31,26 @@ const LoginPage = () => {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
 
-  const [error, setError] = useState("");
-
   const { isLoggedIn, loggedInUser } = useSelector(
     (state: RootState) => state.auth
   );
+
+  const [confirmationResult, setConfirmationResult] =
+    useState<ConfirmationResult>();
+  const [error, setError] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpResendTime, setOtpResendTime] = useState(0);
+  const [isProcessingReq, setIsProcessingReq] = useState(false);
+
+  const { control, handleSubmit, watch } = useForm<FormData>({
+    defaultValues: {
+      otp: "",
+      primaryPhoneNumber: "",
+    },
+  });
+
+  const phoneNumber = watch("primaryPhoneNumber");
+  const otp = watch("otp");
 
   useEffect(() => {
     if (isLoggedIn && !loggedInUser?.companyName) {
@@ -39,60 +60,62 @@ const LoginPage = () => {
     }
   }, [router, isLoggedIn, loggedInUser]);
 
-  const { control, handleSubmit, watch } = useForm<FormData>({
-    defaultValues: {
-      otp: "",
-      primaryPhoneNumber: "",
-    },
-  });
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpResendTime, setOtpResendTime] = useState(0);
-
-  const [isProcessingReq, setIsProcessingReq] = useState(false);
-
-  const phoneNumber = watch("primaryPhoneNumber");
-  const otp = watch("otp");
-
   const whitelistNumbers = ["8123646364", "9049778749"];
 
-  const onSubmit = (data: FormData) => {
+  const onSubmit = async (data: FormData) => {
     setIsProcessingReq(true);
     console.log(data);
-
-    setTimeout(() => {
-      setIsProcessingReq(false);
-      if (whitelistNumbers.includes(data.primaryPhoneNumber)) {
-        if (data.otp === "123456") {
-          dispatch(login({ primaryPhoneNumber: data.primaryPhoneNumber }));
-          if (loggedInUser) {
-            router.push("/dashboard");
-          } else {
-            router.push("/onboarding");
-          }
-        } else {
-          setError("Incorrect OTP");
-        }
+    try {
+      const firebaseUser = await verifyOTP(confirmationResult, data.otp);
+      await createOrUpdateSupabaseUser(firebaseUser);
+      dispatch(login({ primaryPhoneNumber: `+91${data.primaryPhoneNumber}` }));
+      // TODO fetch user profile based on logged in user, currently it's hardcoded in loggedInUser
+      if (loggedInUser) {
+        router.push("/dashboard");
       } else {
-        setError("You are not authorized.");
+        router.push("/onboarding");
       }
-    }, 500);
-    // Handle login logic here
+    } catch (error) {
+      console.error("Error verifying OTP:", error);
+      setError("Incorrect OTP");
+      // TODO: handle human readable error codes here
+    }
+    // setTimeout(() => {
+    //   setIsProcessingReq(false);
+    //   if (whitelistNumbers.includes(data.primaryPhoneNumber)) {
+    //     if (data.otp === "123456") {
+    //       dispatch(login({ primaryPhoneNumber: data.primaryPhoneNumber }));
+    //       if (loggedInUser) {
+    //         router.push("/dashboard");
+    //       } else {
+    //         router.push("/onboarding");
+    //       }
+    //     } else {
+    //       setError("Incorrect OTP");
+    //     }
+    //   } else {
+    //     setError("You are not authorized.");
+    //   }
+    // }, 500);
   };
 
-  const handleSendOTP = () => {
+  const handleSendOTP = async () => {
     setIsProcessingReq(true);
-    setTimeout(() => {
+    try {
+      const result = await sendOTP(`+91${phoneNumber}`);
+      setConfirmationResult(result);
       setOtpSent(true);
       setOtpResendTime(30);
       setIsProcessingReq(false);
-    }, 500);
-
-    // Handle OTP sending logic here
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+      setIsProcessingReq(false);
+    }
   };
 
   const handleResendOTP = () => {
     setOtpResendTime(30);
-    // Handle OTP resending logic here
+    // TODO Handle OTP resending logic here
   };
 
   useEffect(() => {
@@ -113,6 +136,7 @@ const LoginPage = () => {
           alignItems: "center",
         }}
       >
+        <div id="recaptcha-container"></div>
         <Typography component="h1" variant="h5">
           Login to {AppConfig.appName}
         </Typography>

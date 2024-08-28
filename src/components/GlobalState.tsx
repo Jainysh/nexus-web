@@ -21,7 +21,7 @@ const GlobalState = ({ children }: GlobalStateProps) => {
       router.push("/login");
     }
     setIsDataLoading(false);
-  }, []);
+  }, [isLoggedIn]);
   return <>{!isDataLoading && children}</>;
 };
 

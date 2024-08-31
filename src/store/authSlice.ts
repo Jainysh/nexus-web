@@ -1,5 +1,5 @@
+import { Party } from "@/types/common";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Party } from "../../types/common";
 
 interface AuthState {
   isLoggedIn: boolean;

@@ -21,6 +21,7 @@ import {
   verifyOTP,
 } from "@/services/firebase/authService";
 import { ConfirmationResult } from "firebase/auth";
+import { getHumanErrorMessage } from "@/utils/helper";
 
 type FormData = {
   primaryPhoneNumber: string;
@@ -67,36 +68,28 @@ const LoginPage = () => {
     console.log(data);
     try {
       const firebaseUser = await verifyOTP(confirmationResult, data.otp);
-      await createOrUpdateSupabaseUser(firebaseUser);
-      dispatch(login({ primaryPhoneNumber: `+91${data.primaryPhoneNumber}` }));
-      // TODO fetch user profile based on logged in user, currently it's hardcoded in loggedInUser
-      if (loggedInUser) {
-        router.push("/dashboard");
-      } else {
-        router.push("/onboarding");
+      try {
+        const response = await createOrUpdateSupabaseUser(firebaseUser);
+        console.log("creating user response", response);
+        dispatch(
+          login({ primaryPhoneNumber: `+91${data.primaryPhoneNumber}` })
+        );
+        // TODO fetch user profile based on logged in user, currently it's hardcoded in loggedInUser
+        if (loggedInUser) {
+          router.push("/dashboard");
+        } else {
+          router.push("/onboarding");
+        }
+      } catch (error) {
+        console.error("Something missed", error);
+        setError("Something went wrong, please try again");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error verifying OTP:", error);
-      setError("Incorrect OTP");
-      // TODO: handle human readable error codes here
+      const errorMessageToShow = getHumanErrorMessage(error.code);
+      setError(errorMessageToShow);
     }
-    // setTimeout(() => {
-    //   setIsProcessingReq(false);
-    //   if (whitelistNumbers.includes(data.primaryPhoneNumber)) {
-    //     if (data.otp === "123456") {
-    //       dispatch(login({ primaryPhoneNumber: data.primaryPhoneNumber }));
-    //       if (loggedInUser) {
-    //         router.push("/dashboard");
-    //       } else {
-    //         router.push("/onboarding");
-    //       }
-    //     } else {
-    //       setError("Incorrect OTP");
-    //     }
-    //   } else {
-    //     setError("You are not authorized.");
-    //   }
-    // }, 500);
+    setIsProcessingReq(false);
   };
 
   const handleSendOTP = async () => {

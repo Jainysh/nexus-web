@@ -16,8 +16,8 @@ import { RootState } from "@/store/store";
 import { AppConfig } from "@/utils/const";
 import Help from "@/components/Help";
 import { updateUserInfo } from "@/store/authSlice";
-import { Party } from "../../../types/common";
 import useLogout from "@/hooks/useLogout";
+import { Party } from "@/types/common";
 
 interface OnboardingFormData {
   companyName: string;

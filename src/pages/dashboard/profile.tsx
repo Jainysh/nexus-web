@@ -17,7 +17,7 @@ import { RootState } from "@/store/store";
 import { useSelector } from "react-redux";
 import useLogout from "@/hooks/useLogout";
 import Layout from "@/components/Layout";
-import { Party } from "../../../types/common";
+import { Party } from "@/types/common";
 
 const Profile = () => {
   const user = useSelector(

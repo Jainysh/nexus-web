@@ -23,5 +23,5 @@
 # UX Improvements
 
 - focus on phonenumber input on page load
-- Show success and error notification on OTP send, fail
+- disable phone input when OTP is sent and allow user to change phonenumber
 - Add help link on all pages

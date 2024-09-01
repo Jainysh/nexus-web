@@ -30,7 +30,7 @@ type FormData = {
 };
 
 type NotificationType = {
-  type: "error" | "info" | "success" | "warning";
+  severity: "error" | "info" | "success" | "warning";
   message: string;
 };
 
@@ -44,12 +44,12 @@ const LoginPage = () => {
 
   const [confirmationResult, setConfirmationResult] =
     useState<ConfirmationResult>();
-  const [error, setError] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otpResendTime, setOtpResendTime] = useState(0);
   const [isProcessingReq, setIsProcessingReq] = useState(false);
   const [isProcessingOTP, setIsProcessingOTP] = useState(false);
   const [appVerifier, setAppVerifier] = useState<RecaptchaVerifier>();
+  const [alert, setAlert] = useState<NotificationType | undefined>();
   const { control, handleSubmit, watch, setValue } = useForm<FormData>({
     defaultValues: {
       otp: "",
@@ -70,7 +70,7 @@ const LoginPage = () => {
 
   const onSubmit = async (data: FormData) => {
     setIsProcessingReq(true);
-    setError("");
+    setAlert(undefined);
     try {
       const firebaseUser = await verifyOTP(confirmationResult, data.otp);
       try {
@@ -87,12 +87,18 @@ const LoginPage = () => {
         }
       } catch (error) {
         console.error("Something missed", error);
-        setError("Server Error. Please try again.");
+        setAlert({
+          message: "Server Error. Please try again.",
+          severity: "error",
+        });
       }
     } catch (error: any) {
       console.error("Error verifying OTP:", error);
-      const errorMessageToShow = getHumanErrorMessage(error.code);
-      setError(errorMessageToShow);
+      const message = getHumanErrorMessage(error.code);
+      setAlert({
+        severity: "error",
+        message,
+      });
       setValue("otp", "");
     }
     setIsProcessingReq(false);
@@ -100,7 +106,8 @@ const LoginPage = () => {
 
   const handleSendOTP = async () => {
     setIsProcessingOTP(true);
-    setError("");
+    setAlert(undefined);
+    setOtpSent(false);
     try {
       let result;
       if (!appVerifier) {
@@ -116,12 +123,16 @@ const LoginPage = () => {
       } else {
         result = await sendOTP(`+91${phoneNumber}`, appVerifier);
       }
+      setAlert({ message: "OTP sent successfully.", severity: "success" });
       setConfirmationResult(result);
       setOtpSent(true);
       setOtpResendTime(30);
     } catch (error) {
       console.error("Error sending OTP:", error);
-      setError("Server error, couldn't send OTP. Please try again.");
+      setAlert({
+        severity: "error",
+        message: "Server error, couldn't send OTP. Please try again.",
+      });
     }
     setIsProcessingOTP(false);
   };
@@ -200,9 +211,9 @@ const LoginPage = () => {
               >
                 {isProcessingReq ? "Taking you in..." : "Login"}
               </Button>
-              {error && (
-                <Alert severity="error" sx={{ width: "100%", mt: 2 }}>
-                  {error}
+              {alert && (
+                <Alert severity={alert.severity} sx={{ width: "100%", mt: 2 }}>
+                  {alert.message}
                 </Alert>
               )}
               <Button
@@ -219,9 +230,9 @@ const LoginPage = () => {
             </>
           ) : (
             <>
-              {error && (
-                <Alert severity="error" sx={{ width: "100%", mt: 2 }}>
-                  {error}
+              {alert && (
+                <Alert severity={alert.severity} sx={{ width: "100%", mt: 2 }}>
+                  {alert.message}
                 </Alert>
               )}
               <Button

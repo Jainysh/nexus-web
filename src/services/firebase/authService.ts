@@ -7,10 +7,10 @@ import {
 import { auth } from "../firebaseConfig";
 import { supabase } from "../supabaseConfig";
 
-export const sendOTP = async (phoneNumber: string) => {
-  const appVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
-    size: "invisible",
-  });
+export const sendOTP = async (
+  phoneNumber: string,
+  appVerifier: RecaptchaVerifier
+) => {
   const confirmationResult = await signInWithPhoneNumber(
     auth,
     phoneNumber,

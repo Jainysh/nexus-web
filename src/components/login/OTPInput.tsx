@@ -1,17 +1,25 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useMemo, memo } from "react";
 import { Controller, Control } from "react-hook-form";
 import { TextField, Box } from "@mui/material";
 
 interface OTPInputProps {
   control: Control<any>;
+  otp: string;
 }
 
-const OTPInput: React.FC<OTPInputProps> = ({ control }) => {
+const OTPInput: React.FC<OTPInputProps> = ({ control, otp }) => {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     inputRefs.current[0]?.focus();
   }, []);
+
+  useEffect(() => {
+    if (!otp) {
+      [0, 1, 2, 3, 4, 5].forEach((v) => (inputRefs.current[v]!.value = ""));
+      inputRefs.current[0]?.focus();
+    }
+  }, [otp]);
 
   const handleChange = (index: number, value: string) => {
     if (value.length > 1) {
@@ -91,4 +99,4 @@ const OTPInput: React.FC<OTPInputProps> = ({ control }) => {
   );
 };
 
-export default OTPInput;
+export default memo(OTPInput);

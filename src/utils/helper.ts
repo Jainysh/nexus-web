@@ -9,7 +9,7 @@ export const getHumanErrorMessage = (errorCode: string) => {
       humanErrorMessage = "OTP expired. Please try again.";
       break;
     case "auth/invalid-verification-code":
-      humanErrorMessage = "Invalid OTP";
+      humanErrorMessage = "Incorrect OTP. Please check and enter correct OTP.";
       break;
     default:
       humanErrorMessage =

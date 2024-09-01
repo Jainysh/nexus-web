@@ -20,12 +20,18 @@ import {
   sendOTP,
   verifyOTP,
 } from "@/services/firebase/authService";
-import { ConfirmationResult } from "firebase/auth";
+import { ConfirmationResult, RecaptchaVerifier } from "firebase/auth";
 import { getHumanErrorMessage } from "@/utils/helper";
+import { auth } from "@/services/firebaseConfig";
 
 type FormData = {
   primaryPhoneNumber: string;
   otp: string;
+};
+
+type NotificationType = {
+  type: "error" | "info" | "success" | "warning";
+  message: string;
 };
 
 const LoginPage = () => {
@@ -42,8 +48,9 @@ const LoginPage = () => {
   const [otpSent, setOtpSent] = useState(false);
   const [otpResendTime, setOtpResendTime] = useState(0);
   const [isProcessingReq, setIsProcessingReq] = useState(false);
-
-  const { control, handleSubmit, watch } = useForm<FormData>({
+  const [isProcessingOTP, setIsProcessingOTP] = useState(false);
+  const [appVerifier, setAppVerifier] = useState<RecaptchaVerifier>();
+  const { control, handleSubmit, watch, setValue } = useForm<FormData>({
     defaultValues: {
       otp: "",
       primaryPhoneNumber: "",
@@ -61,11 +68,9 @@ const LoginPage = () => {
     }
   }, [router, isLoggedIn, loggedInUser]);
 
-  const whitelistNumbers = ["8123646364", "9049778749"];
-
   const onSubmit = async (data: FormData) => {
     setIsProcessingReq(true);
-    console.log(data);
+    setError("");
     try {
       const firebaseUser = await verifyOTP(confirmationResult, data.otp);
       try {
@@ -82,33 +87,48 @@ const LoginPage = () => {
         }
       } catch (error) {
         console.error("Something missed", error);
-        setError("Something went wrong, please try again");
+        setError("Server Error. Please try again.");
       }
     } catch (error: any) {
       console.error("Error verifying OTP:", error);
       const errorMessageToShow = getHumanErrorMessage(error.code);
       setError(errorMessageToShow);
+      setValue("otp", "");
     }
     setIsProcessingReq(false);
   };
 
   const handleSendOTP = async () => {
-    setIsProcessingReq(true);
+    setIsProcessingOTP(true);
+    setError("");
     try {
-      const result = await sendOTP(`+91${phoneNumber}`);
+      let result;
+      if (!appVerifier) {
+        const appVerifierRes = new RecaptchaVerifier(
+          auth,
+          "recaptcha-container",
+          {
+            size: "invisible",
+          }
+        );
+        setAppVerifier(appVerifierRes);
+        result = await sendOTP(`+91${phoneNumber}`, appVerifierRes);
+      } else {
+        result = await sendOTP(`+91${phoneNumber}`, appVerifier);
+      }
       setConfirmationResult(result);
       setOtpSent(true);
       setOtpResendTime(30);
-      setIsProcessingReq(false);
     } catch (error) {
       console.error("Error sending OTP:", error);
-      setIsProcessingReq(false);
+      setError("Server error, couldn't send OTP. Please try again.");
     }
+    setIsProcessingOTP(false);
   };
 
-  const handleResendOTP = () => {
+  const handleResendOTP = async () => {
+    await handleSendOTP();
     setOtpResendTime(30);
-    // TODO Handle OTP resending logic here
   };
 
   useEffect(() => {
@@ -171,7 +191,7 @@ const LoginPage = () => {
 
           {otpSent ? (
             <>
-              <OTPInput control={control} />
+              <OTPInput control={control} otp={otp} />
               <Button
                 fullWidth
                 variant="contained"
@@ -180,6 +200,11 @@ const LoginPage = () => {
               >
                 {isProcessingReq ? "Taking you in..." : "Login"}
               </Button>
+              {error && (
+                <Alert severity="error" sx={{ width: "100%", mt: 2 }}>
+                  {error}
+                </Alert>
+              )}
               <Button
                 fullWidth
                 variant="text"
@@ -191,23 +216,25 @@ const LoginPage = () => {
                   ? `Resend OTP in ${otpResendTime}s`
                   : "Resend OTP"}
               </Button>
+            </>
+          ) : (
+            <>
               {error && (
                 <Alert severity="error" sx={{ width: "100%", mt: 2 }}>
                   {error}
                 </Alert>
               )}
+              <Button
+                fullWidth
+                variant="contained"
+                disabled={
+                  !phoneNumber || phoneNumber.length !== 10 || isProcessingOTP
+                }
+                onClick={handleSendOTP}
+              >
+                {isProcessingOTP ? "Sending" : "Send"} OTP
+              </Button>
             </>
-          ) : (
-            <Button
-              fullWidth
-              variant="contained"
-              disabled={
-                !phoneNumber || phoneNumber.length !== 10 || isProcessingReq
-              }
-              onClick={handleSendOTP}
-            >
-              {isProcessingReq ? "Sending" : "Send"} OTP
-            </Button>
           )}
         </Box>
       </Box>

@@ -19,3 +19,9 @@
 # Backend
 
 - SSR: https://supabase.com/docs/guides/auth/server-side
+
+# UX Improvements
+
+- focus on phonenumber input on page load
+- Show success and error notification on OTP send, fail
+- Add help link on all pages

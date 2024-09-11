@@ -13,16 +13,17 @@ import CountryCodeDropdown from "@/components/login/CountryCodeDropdown";
 import { useRouter } from "next/router";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store/store";
-import { login } from "@/store/authSlice";
-import { AppConfig } from "@/utils/const";
+import { updateUserInfo } from "@/store/authSlice";
+import { AppConfig, whiteListedNumbers } from "@/utils/const";
 import {
-  createOrUpdateSupabaseUser,
+  signInWithSupabase,
   sendOTP,
   verifyOTP,
 } from "@/services/firebase/authService";
 import { ConfirmationResult, RecaptchaVerifier } from "firebase/auth";
 import { getHumanErrorMessage } from "@/utils/helper";
 import { auth } from "@/services/firebaseConfig";
+import { Party } from "@/types/common";
 
 type FormData = {
   primaryPhoneNumber: string;
@@ -38,9 +39,7 @@ const LoginPage = () => {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
 
-  const { isLoggedIn, loggedInUser } = useSelector(
-    (state: RootState) => state.auth
-  );
+  const { isLoggedIn, user } = useSelector((state: RootState) => state.auth);
 
   const [confirmationResult, setConfirmationResult] =
     useState<ConfirmationResult>();
@@ -61,12 +60,12 @@ const LoginPage = () => {
   const otp = watch("otp");
 
   useEffect(() => {
-    if (isLoggedIn && !loggedInUser?.companyName) {
+    if (isLoggedIn && !user?.companyName) {
       router.push("/onboarding");
-    } else if (isLoggedIn && loggedInUser?.companyName) {
+    } else if (isLoggedIn && user?.companyName) {
       router.push("/dashboard");
     }
-  }, [router, isLoggedIn, loggedInUser]);
+  }, [router, isLoggedIn, user]);
 
   const onSubmit = async (data: FormData) => {
     setIsProcessingReq(true);
@@ -74,13 +73,10 @@ const LoginPage = () => {
     try {
       const firebaseUser = await verifyOTP(confirmationResult, data.otp);
       try {
-        const response = await createOrUpdateSupabaseUser(firebaseUser);
-        console.log("creating user response", response);
-        dispatch(
-          login({ primaryPhoneNumber: `+91${data.primaryPhoneNumber}` })
-        );
+        const user = await signInWithSupabase(firebaseUser);
+        dispatch(updateUserInfo({ user: user?.user_metadata as Party }));
         // TODO fetch user profile based on logged in user, currently it's hardcoded in loggedInUser
-        if (loggedInUser) {
+        if (user?.user_metadata) {
           router.push("/dashboard");
         } else {
           router.push("/onboarding");
@@ -108,30 +104,37 @@ const LoginPage = () => {
     setIsProcessingOTP(true);
     setAlert(undefined);
     setOtpSent(false);
-    try {
-      let result;
-      if (!appVerifier) {
-        const appVerifierRes = new RecaptchaVerifier(
-          auth,
-          "recaptcha-container",
-          {
-            size: "invisible",
-          }
-        );
-        setAppVerifier(appVerifierRes);
-        result = await sendOTP(`+91${phoneNumber}`, appVerifierRes);
-      } else {
-        result = await sendOTP(`+91${phoneNumber}`, appVerifier);
+    if (whiteListedNumbers.includes(`+91${phoneNumber}`)) {
+      try {
+        let result;
+        if (!appVerifier) {
+          const appVerifierRes = new RecaptchaVerifier(
+            auth,
+            "recaptcha-container",
+            {
+              size: "invisible",
+            }
+          );
+          setAppVerifier(appVerifierRes);
+          result = await sendOTP(`+91${phoneNumber}`, appVerifierRes);
+        } else {
+          result = await sendOTP(`+91${phoneNumber}`, appVerifier);
+        }
+        setAlert({ message: "OTP sent successfully.", severity: "success" });
+        setConfirmationResult(result);
+        setOtpSent(true);
+        setOtpResendTime(30);
+      } catch (error) {
+        console.error("Error sending OTP:", error);
+        setAlert({
+          severity: "error",
+          message: "Server error, couldn't send OTP. Please try again.",
+        });
       }
-      setAlert({ message: "OTP sent successfully.", severity: "success" });
-      setConfirmationResult(result);
-      setOtpSent(true);
-      setOtpResendTime(30);
-    } catch (error) {
-      console.error("Error sending OTP:", error);
+    } else {
       setAlert({
         severity: "error",
-        message: "Server error, couldn't send OTP. Please try again.",
+        message: "You are not authorized to use this application",
       });
     }
     setIsProcessingOTP(false);
@@ -231,7 +234,7 @@ const LoginPage = () => {
           ) : (
             <>
               {alert && (
-                <Alert severity={alert.severity} sx={{ width: "100%", mt: 2 }}>
+                <Alert severity={alert.severity} sx={{ width: "100%", my: 2 }}>
                   {alert.message}
                 </Alert>
               )}

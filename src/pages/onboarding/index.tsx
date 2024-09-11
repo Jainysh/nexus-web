@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import {
   Container,
@@ -33,9 +33,7 @@ interface OnboardingFormData {
 
 const OnboardingPage = () => {
   const [activeTab, setActiveTab] = useState(0);
-  const { loggedInUser, isLoggedIn } = useSelector(
-    (state: RootState) => state.auth
-  );
+  const { user, isLoggedIn } = useSelector((state: RootState) => state.auth);
 
   const dispatch = useDispatch();
   const { LogoutComponent } = useLogout();
@@ -43,16 +41,10 @@ const OnboardingPage = () => {
   const router = useRouter();
   const { control, handleSubmit } = useForm<OnboardingFormData>({
     defaultValues: {
-      primaryPhoneNumber: loggedInUser?.primaryPhoneNumber || "",
+      primaryPhoneNumber: user?.primaryPhoneNumber || "",
       country: "India",
     },
   });
-
-  useEffect(() => {
-    if (!isLoggedIn) {
-      router.push("/login");
-    }
-  }, [isLoggedIn, router]);
 
   const onSubmit = (data: OnboardingFormData) => {
     const user: Party = {

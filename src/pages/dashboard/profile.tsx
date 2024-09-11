@@ -20,9 +20,7 @@ import Layout from "@/components/Layout";
 import { Party } from "@/types/common";
 
 const Profile = () => {
-  const user = useSelector(
-    (state: RootState) => state.auth.loggedInUser
-  ) as Party;
+  const user = useSelector((state: RootState) => state.auth.user) as Party;
   const { handleLogOut } = useLogout();
   const isMobile = useMediaQuery((theme: Theme) =>
     theme.breakpoints.down("sm")

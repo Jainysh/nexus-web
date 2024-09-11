@@ -3,6 +3,7 @@ import {
   RecaptchaVerifier,
   signInWithCredential,
   signInWithPhoneNumber,
+  User,
 } from "firebase/auth";
 import { auth } from "../firebaseConfig";
 import { supabase } from "../supabaseConfig";
@@ -28,18 +29,45 @@ export const verifyOTP = async (confirmationResult: any, otp: string) => {
   return userCredential.user;
 };
 
-export const createOrUpdateSupabaseUser = async (firebaseUser: any) => {
-  const { data, error } = await supabase.from("users").upsert(
-    {
-      firebase_uid: firebaseUser.uid,
-      phone_number: firebaseUser.phoneNumber,
-      // Add any other user data you want to store
-    },
-    {
-      onConflict: "firebase_uid",
-    }
-  );
+export const signInWithSupabase = async (firebaseUser: User) => {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    phone: firebaseUser.phoneNumber || "",
+    password: firebaseUser.uid,
+  });
+  console.log("supabase response", data, error);
+  if (error) {
+    if (error.status === 400) {
+      const { data, error } = await supabase.auth.signUp({
+        phone: firebaseUser.phoneNumber || "",
+        password: firebaseUser.uid,
+        options: {
+          data: {
+            companyName: "Jain Distributors",
+            address: {
+              addressLine1: "Kaipeth Circle",
+              city: "Davangere",
+              country: "India",
+              district: "Davangere",
+              pincode: "123456",
+              state: "Karnataka",
+              addressLine2: "",
+            },
+            primaryPhoneNumber: "+918123646364",
+            type: "Distributor",
+          },
+        },
+      });
 
-  if (error) throw error;
-  return data;
+      if (error) {
+        console.log("supabase signup error");
+        throw new Error("Sign-up failed: " + error.message);
+      }
+
+      return data.user;
+    } else {
+      throw error;
+    }
+  }
+
+  return data.user;
 };
